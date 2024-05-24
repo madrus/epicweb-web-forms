@@ -1,5 +1,27 @@
 # Form Validation
 
+## My Notes
+
+We can use the MDN [📜 Form Validation on MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation)
+to validate the form. For that we just add validation attributes as necessary. Here are they:
+
+- **required**: Specifies whether a form field needs to be filled in before the form can be submitted.
+- **minlength and maxlength**: Specifies the minimum and maximum length of textual data (strings).
+- **min and max**: Specifies the minimum and maximum values of numerical input types.
+- **type**: Specifies whether the data needs to be a number, an email address, or some other specific preset type.
+- **pattern**: Specifies a regular expression that defines a pattern the entered data needs to follow.
+
+We can also use CSS pseudo classes like `:valid` and `:invalid` to visually highlight
+the valid and invalid fields.
+
+Then our code may look like this:
+
+```tsx
+<Input name="title" defaultValue={data.note.title} required maxLength={100} />
+```
+
+## KcD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/required-field-validation-for-user-input" />
 
 👨‍💼 One cool thing about our users is we can trust them so we don't need to do
