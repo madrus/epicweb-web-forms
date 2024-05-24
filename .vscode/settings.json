@@ -4,5 +4,19 @@
     "@remix-run/router",
     "react-router-dom",
     "react-router"
-  ]
+  ],
+  "workbench.colorCustomizations": {
+    "editorGroup.border": "#cf87bc",
+    "panel.border": "#cf87bc",
+    "sash.hoverBorder": "#cf87bc",
+    "sideBar.border": "#cf87bc",
+    "statusBar.background": "#c163a8",
+    "statusBar.border": "#c163a8",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#ac4591",
+    "statusBarItem.remoteBackground": "#c163a8",
+    "statusBarItem.remoteForeground": "#15202b",
+    "tab.activeBorder": "#cf87bc"
+  },
+  "peacock.color": "#c163a8"
 }
