@@ -1,6 +1,5 @@
-import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
+import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Form, useLoaderData } from '@remix-run/react'
-
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -36,20 +35,34 @@ export async function action({ request, params }: DataFunctionArgs) {
 	invariantResponse(typeof title === 'string', 'title must be a string')
 	invariantResponse(typeof content === 'string', 'content must be a string')
 
+	// 🐨 create an errors object here
+	// 🐨 validate the requirements for the title and content and add any errors
+	// to the errors object
+	// 🐨 if there are any errors, then return a json response with the errors
+	// and a 400 status code
+
 	await updateNote({ id: params.noteId, title, content })
 
 	return redirect(`/users/${params.username}/notes/${params.noteId}`)
 }
 
+// 🐨 this is a good place to stick the ErrorList component if you want to use that
+
 export default function NoteEdit() {
 	const data = useLoaderData<typeof loader>()
+	// 🐨 get the actionData from useActionData here
 	const isSubmitting = useIsSubmitting()
 	const formId = 'note-editor'
+
+	// 🐨 get the fieldErrors here from the actionData
 
 	return (
 		<div className="absolute inset-0">
 			<Form
 				id={formId}
+				// 🐨 to test out the server-side validation, you need to disable the
+				// client-side validation. You can do that by adding:
+				// noValidate
 				method="post"
 				className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
 			>
@@ -57,26 +70,36 @@ export default function NoteEdit() {
 					<div>
 						{/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
 						<Label>Title</Label>
-						{/* 🐨 add the appropriate HTML validation attributes here */}
 						<Input
 							name="title"
 							defaultValue={data.note.title}
 							required
 							maxLength={100}
 						/>
+						{/* 🐨 add the title error messages here */}
 					</div>
 					<div>
 						{/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
 						<Label>Content</Label>
-						{/* 🐨 add the appropriate HTML validation attributes here */}
 						<Textarea
 							name="content"
 							defaultValue={data.note.content}
 							required
 							maxLength={10000}
 						/>
+						{/* 🐨 add content the error messages here */}
 					</div>
 				</div>
+				{/* 🐨 add the form error messages here */}
+				{/*
+				🦉 even though we don't really have form messages, we're going to
+				have you do it anyway so you can see how it works and to maintain
+				consistency with the codebase.
+
+				💯 If you've got extra time, think of an error you could have that would
+				be at the form level (like, maybe your content must include a word from
+				the title or something like that)
+			*/}
 			</Form>
 			<div className={floatingToolbarClassName}>
 				<Button variant="destructive" type="reset">

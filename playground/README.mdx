@@ -1,42 +1,140 @@
-# Form Validation
+# Server Validation
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/server-side-validation-and-custom-error-messages" />
 
-We can use the MDN [📜 Form Validation on MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation)
-to validate the form. For that we just add validation attributes as necessary. Here are they:
+👨‍💼 Sadly, browser only validation is not enough. Users can easily change the
+DOM using the browser devtools or even POST to our server directly. You _always_
+must validate on the server side. And you'll also want to render the errors from
+the server.
 
-- **required**: Specifies whether a form field needs to be filled in before the form can be submitted.
-- **minlength and maxlength**: Specifies the minimum and maximum length of textual data (strings).
-- **min and max**: Specifies the minimum and maximum values of numerical input types.
-- **type**: Specifies whether the data needs to be a number, an email address, or some other specific preset type.
-- **pattern**: Specifies a regular expression that defines a pattern the entered data needs to follow.
+The `action` can do some validation, whatever validation it likes (even `async`
+validation), and if there are errors it can send them back in a JSON response.
+You get what the `action` returns using a hook called `useActionData` which is
+very similar to `useLoaderData` with the exception that it will return
+`undefined` until the `action` has been called. Here's an example of that:
 
-We can also use CSS pseudo classes like `:valid` and `:invalid` to visually highlight
-the valid and invalid fields.
+```tsx filename=app/routes/subscribe.tsx lines=2,4-9,15-36,44,46-49,56-62
+import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+import { useActionData } from '@remix-run/react'
 
-Then our code may look like this:
+type ActionErrors = {
+	formErrors: Array<string>
+	fieldErrors: {
+		email: Array<string>
+	}
+}
 
-```tsx
-<Input name="title" defaultValue={data.note.title} required maxLength={100} />
+export async function action({ request }: DataFunctionArgs) {
+	const formData = await request.formData()
+	const email = formData.get('email')
+
+	const errors: ActionErrors = {
+		formErrors: [],
+		fieldErrors: {
+			email: [],
+		},
+	}
+	if (email.length < 3 && !email.includes('@')) {
+		errors.fieldErrors.email.push('Invalid email')
+	}
+	const hasErrors =
+		errors.formErrors.length ||
+		Object.values(errors.fieldErrors).some(fieldErrors => fieldErrors.length)
+	if (hasErrors) {
+		return json(
+			{
+				status: 'error',
+				errors,
+				// 🦺 the as const is here to help with our TypeScript inference
+			} as const,
+			{ status: 400 },
+		)
+	}
+
+	// subscribe the user to the newsletter
+
+	return redirect('/success')
+}
+
+export default function Subscribe() {
+	const actionData = useActionData<typeof action>()
+
+	const fieldErrors =
+		actionData?.status === 'error' ? actionData.errors.fieldErrors : null
+	const formErrors =
+		actionData?.status === 'error' ? actionData.errors.formErrors : null
+
+	return (
+		<Form method="post">
+			<label>
+				Email <input required type="email" />
+			</label>
+			{fieldErrors?.email?.length ? (
+				<ul>
+					{fieldErrors.email.map(e => (
+						<li key={e}>{e}</li>
+					))}
+				</ul>
+			) : null}
+			<button type="submit">Subscribe</button>
+		</Form>
+	)
+}
 ```
 
-## KcD's Workshop
+The structure of the `action` response is up to you, but I recommend you use the
+structure I have laid out above as it handles multiple errors per field and
+form-wide errors with the `formErrors`.
 
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/required-field-validation-for-user-input" />
+Keep in mind that because `useActionData` returns the `action` data, it could be
+undefined until the form has been submitted.
 
-👨‍💼 One cool thing about our users is we can trust them so we don't need to do
-validation...
+To help you out a bit, you can even use this component if you'd like:
 
-😂 Just kidding. In fact, even if you do trust your users we should be doing
-validation. It's about a better user experience!
+```tsx
+function ErrorList({ errors }: { errors?: Array<string> | null }) {
+	return errors?.length ? (
+		<ul className="flex flex-col gap-1">
+			{errors.map((error, i) => (
+				<li key={i} className="text-foreground-destructive text-[10px]">
+					{error}
+				</li>
+			))}
+		</ul>
+	) : null
+}
+```
 
-Here are the requirements:
+This will make it easy to just render a list of errors, and you can give it a
+little space too like this:
 
-- `title` is required, maximum length of 100
-- `content` is required, maximum length of 10000
+```tsx
+<div className="min-h-[32px] px-4 pb-3 pt-1">
+	<ErrorList errors={fieldErrors?.email} />
+</div>
+```
 
-You can use native HTML form validation attributes on the `input` and `textarea`
-to accomplish this. `required`, and `maxlength` are the attributes
-you'll need.
+Doing things this way will reduce the amount of jumpiness in the UI when the
+errors load which is a nicer UX.
 
-- [📜 Form Validation on MDN](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation)
+<callout-info class="aside">
+	You could definitely put that `div` in the `ErrorList` component, but I prefer
+	to limit the amount of spacing styles that are external to the component
+	itself. Otherwise you'll find yourself needing to customize this in other
+	places.
+</callout-info>
+
+🐨 Please add some server-side validation to the `action` function and display
+any errors returned from that in the form.
+
+<callout-danger>
+	To test out the server validation, you'll need to temporarily disable the form
+	validation. Adding a `noValidate` attribute on the form allows you to submit
+	it even if there are errors (such as an empty input field). Note that the
+	other attributes will still be enforced by the browser, such as the
+	`maxLength`. We'll improve this next.
+</callout-danger>
+
+Your emoji friends will guide you! Thanks!
+
+- [📜 `useActionData`](https://remix.run/docs/en/main/hooks/use-action-data)
