@@ -1,5 +1,27 @@
 # Server Validation
 
+## My Notes
+
+### Server-side validation
+
+We can test out the server-side validation. For that we need to temporarily disable the
+client-side validation. We can do that by adding the `noValidate` attribute on the form:
+
+```tsx
+<Form
+	id={formId}
+	noValidate
+	method="post"
+	className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
+>
+	...
+</Form>
+```
+
+TODO: how does Reset button work? how can I debug its action?
+
+## KCD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/server-side-validation-and-custom-error-messages" />
 
 👨‍💼 Sadly, browser only validation is not enough. Users can easily change the
@@ -14,7 +36,7 @@ very similar to `useLoaderData` with the exception that it will return
 `undefined` until the `action` has been called. Here's an example of that:
 
 ```tsx filename=app/routes/subscribe.tsx lines=2,4-9,15-36,44,46-49,56-62
-import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
 import { useActionData } from '@remix-run/react'
 
 type ActionErrors = {
