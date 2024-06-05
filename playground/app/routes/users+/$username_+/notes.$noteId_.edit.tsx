@@ -11,14 +11,6 @@ import { Textarea } from '#app/components/ui/textarea.tsx'
 import { db, updateNote } from '#app/utils/db.server.ts'
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc.tsx'
 
-type ActionErrors = {
-	formErrors: Array<string>
-	fieldErrors: {
-		title: Array<string>
-		content: Array<string>
-	}
-}
-
 export async function loader({ params }: DataFunctionArgs) {
 	const note = db.note.findFirst({
 		where: {
@@ -34,6 +26,17 @@ export async function loader({ params }: DataFunctionArgs) {
 		note: { title: note.title, content: note.content },
 	})
 }
+
+type ActionErrors = {
+	formErrors: Array<string>
+	fieldErrors: {
+		title: Array<string>
+		content: Array<string>
+	}
+}
+
+const titleMaxLength = 100
+const contentMaxLength = 10000
 
 export async function action({ request, params }: DataFunctionArgs) {
 	invariantResponse(params.noteId, 'noteId param is required')
@@ -54,18 +57,20 @@ export async function action({ request, params }: DataFunctionArgs) {
 	}
 	// 🐨 validate the requirements for the title and content and add any errors
 	// to the errors object
-	if (title.length === 0) {
+	if (!title) {
 		errors.fieldErrors.title.push('Title is required')
-	} else if (title.length > 100) {
+	}
+	if (title.length > titleMaxLength) {
 		errors.fieldErrors.title.push(
-			'Title should contain no more than 100 characters',
+			`Title should contain no more than ${titleMaxLength} characters`,
 		)
 	}
-	if (content.length === 0) {
+	if (!content) {
 		errors.fieldErrors.content.push('Content is required')
-	} else if (content.length > 10000) {
+	}
+	if (content.length > contentMaxLength) {
 		errors.fieldErrors.content.push(
-			'Content should contain no more than 10000 characters',
+			`Content should contain no more than ${contentMaxLength} characters`,
 		)
 	}
 	// dummy form validation error
@@ -95,20 +100,16 @@ export async function action({ request, params }: DataFunctionArgs) {
 }
 
 // 🐨 this is a good place to stick the ErrorList component if you want to use that
-function ErrorList({ errorList }: { errorList: Array<string> }) {
-	if (!errorList || errorList?.length === 0) {
-		return null
-	}
-
-	return (
+function ErrorList({ errors }: { errors: Array<string> }) {
+	return errors?.length ? (
 		<ul>
-			{errorList.map(e => (
-				<li key={e} className="text-red-500">
+			{errors.map((e, i) => (
+				<li key={i} className="text-[10px] text-foreground-destructive">
 					{e}
 				</li>
 			))}
 		</ul>
-	)
+	) : null
 }
 
 export default function NoteEdit() {
@@ -119,9 +120,15 @@ export default function NoteEdit() {
 	const formId = 'note-editor'
 
 	// 🐨 get the fieldErrors here from the actionData
-	const fieldErrors = (actionData?.errors as ActionErrors)?.fieldErrors ?? []
+	const fieldErrors =
+		actionData?.status === 'error'
+			? (actionData.errors as ActionErrors)?.fieldErrors
+			: null ?? { title: [], content: [] }
 	// 🐨 get the fieldErrors here from the actionData
-	const formErrors = (actionData?.errors as ActionErrors)?.formErrors ?? []
+	const formErrors =
+		actionData?.status === 'error'
+			? (actionData.errors as ActionErrors)?.formErrors
+			: null ?? []
 
 	return (
 		<div className="absolute inset-0">
@@ -141,10 +148,12 @@ export default function NoteEdit() {
 							name="title"
 							defaultValue={data.note.title}
 							required
-							maxLength={100}
+							maxLength={titleMaxLength}
 						/>
 						{/* 🐨 add the title error messages here */}
-						<ErrorList errorList={fieldErrors?.title} />
+						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							<ErrorList errors={fieldErrors?.title} />
+						</div>
 					</div>
 					<div>
 						{/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
@@ -153,15 +162,18 @@ export default function NoteEdit() {
 							name="content"
 							defaultValue={data.note.content}
 							required
-							maxLength={10000}
+							maxLength={contentMaxLength}
 						/>
 						{/* 🐨 add the content error messages here */}
-						<ErrorList errorList={fieldErrors?.content} />
+						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							<ErrorList errors={fieldErrors?.content} />
+						</div>
 					</div>
 				</div>
 				{/* 🐨 add the form error messages here */}
-				{/* 🐨 add the title error messages here */}
-				<ErrorList errorList={formErrors} />
+				<div className="min-h-[32px] px-4 pb-3 pt-1">
+					<ErrorList errors={formErrors} />
+				</div>
 				{/*
 				🦉 even though we don't really have form messages, we're going to
 				have you do it anyway so you can see how it works and to maintain
