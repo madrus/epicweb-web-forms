@@ -1,5 +1,22 @@
 # Disable Default Validation
 
+## My Notes
+
+We want to disable the default browser validation for our form as long as the component is not mounted (hydrated).
+For that we create a hook `useHydrated` that checks if the component is mounted and use this hook in our form:
+
+```tsx
+const isHydrated = useHydrated()
+```
+
+and then disable the default browser validation if the component is not mounted:
+
+```tsx
+<Form noValidate={isHydrated} />
+```
+
+## KcD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/dynamic-error-validation-with-hooks" />
 
 👨‍💼 Now that we have nice looking error messages we manage ourselves, we want to
