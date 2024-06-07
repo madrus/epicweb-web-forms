@@ -18,6 +18,19 @@ Now we can disable the default browser validation when the component is mounted:
 <Form noValidate={isHydrated} />
 ```
 
+If the user is on a really slow network connection or the JavaScript fails to load for some reason,
+then we can get the client-side validation that's built into the browser automatically as well.
+So we have those options and can give the user a nice user experience there.
+If that were to fail somehow or sometimes there's some validation logic that requires the server
+like username must be unique, then our server-side validation will still catch.
+But the benefit of doing this is it means that if the users on a really slow Network connection,
+we don't want to make them have to do a full network request at that moment to determine if the username is unique.
+Even to determent if the title was required or the title was too long or whatever.
+That is why let's do all the validation on the client that we can while we are not hydrated.
+In the case that the users got a really slow network connection, we can also even if we are hydrated
+and it would be nice to have some client-side validation for some of this stuff to to not waste network traffic.
+We are going to implement some of that in the future as well.
+
 ## KcD's Workshop
 
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/dynamic-error-validation-with-hooks" />
