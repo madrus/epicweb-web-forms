@@ -18,7 +18,41 @@ client-side validation. We can do that by adding the `noValidate` attribute on t
 </Form>
 ```
 
-TODO: how does Reset button work? how can I debug its action?
+For server-side validation errors we create an error object with the form errors and field errors:
+
+```ts
+const errors: ActionErrors = {
+	formErrors: [],
+	fieldErrors: {
+		title: [],
+		content: [],
+	},
+}
+```
+
+To show the errors we can create the `ErrorList` component:
+
+```tsx
+function ErrorList({ errors }: { errors: Array<string> }) {
+	return errors?.length ? (
+		<ul>
+			{errors.map((e, i) => (
+				<li key={i} className="text-[10px] text-foreground-destructive">
+					{e}
+				</li>
+			))}
+		</ul>
+	) : null
+}
+```
+
+and use it like this:
+
+```tsx
+<div className="min-h-[32px] px-4 pb-3 pt-1">
+	<ErrorList errors={fieldErrors?.content} />
+</div>
+```
 
 ## KCD's Workshop
 

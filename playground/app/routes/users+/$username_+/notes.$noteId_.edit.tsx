@@ -55,6 +55,7 @@ export async function action({ request, params }: DataFunctionArgs) {
 			content: [],
 		},
 	}
+
 	// 🐨 validate the requirements for the title and content and add any errors
 	// to the errors object
 	if (!title) {
