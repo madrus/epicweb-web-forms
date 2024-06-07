@@ -2,14 +2,17 @@
 
 ## My Notes
 
-We want to disable the default browser validation for our form as long as the component is not mounted (hydrated).
+We want to disable the default browser validation for our form only when the component is mounted (hydrated).
 For that we create a hook `useHydrated` that checks if the component is mounted and use this hook in our form:
 
 ```tsx
 const isHydrated = useHydrated()
 ```
 
-and then disable the default browser validation if the component is not mounted:
+> The idea behind this is that React hooks don't run on the server. So, as long as the component is not mounted,
+> the hook will return `false`.
+
+Now we can disable the default browser validation when the component is mounted:
 
 ```tsx
 <Form noValidate={isHydrated} />
