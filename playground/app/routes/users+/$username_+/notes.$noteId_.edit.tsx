@@ -1,8 +1,6 @@
-import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
+import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
-
 import { useEffect, useState } from 'react'
-
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -94,9 +92,8 @@ function ErrorList({ errors }: { errors?: Array<string> | null }) {
 	) : null
 }
 
-// 🐨 here's a good place to put the useHydrated hook
 function useHydrated() {
-	const [hydrated, setHydrated] = useState<boolean>(false)
+	const [hydrated, setHydrated] = useState(false)
 	useEffect(() => setHydrated(true), [])
 	return hydrated
 }
@@ -104,31 +101,33 @@ function useHydrated() {
 export default function NoteEdit() {
 	const data = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
-	const isSubmitting = useIsSubmitting()
 	const formId = 'note-editor'
+	const isSubmitting = useIsSubmitting()
 
 	const fieldErrors =
 		actionData?.status === 'error' ? actionData.errors.fieldErrors : null
 	const formErrors =
 		actionData?.status === 'error' ? actionData.errors.formErrors : null
-
-	// 🐨 here's a good place for the isHydrated variable you get from useHydrated
 	const isHydrated = useHydrated()
 
 	return (
 		<div className="absolute inset-0">
 			<Form
 				id={formId}
-				// 🐨 set the noValidate prop to the isHydrated variable
 				noValidate={isHydrated}
 				method="post"
 				className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
 			>
 				<div className="flex flex-col gap-1">
 					<div>
-						{/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
+						{/* 🐨 add an htmlFor attribute here */}
 						<Label>Title</Label>
 						<Input
+							// 🐨 add an id attribute here (it should match what you set to htmlFor on the label)
+							// 🦉 the actual value itself doesn't matter, but it should be unique on the page
+							// and it should match the label's htmlFor.
+
+							// 💯 for extra credit, generate the id using React's useId() hook
 							name="title"
 							defaultValue={data.note.title}
 							required
@@ -139,9 +138,10 @@ export default function NoteEdit() {
 						</div>
 					</div>
 					<div>
-						{/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
+						{/* 🐨 add an htmlFor attribute here */}
 						<Label>Content</Label>
 						<Textarea
+							// 🐨 add an id attribute here (it should match what you set to htmlFor on the label)
 							name="content"
 							defaultValue={data.note.content}
 							required
@@ -155,8 +155,12 @@ export default function NoteEdit() {
 				<ErrorList errors={formErrors} />
 			</Form>
 			<div className={floatingToolbarClassName}>
-				<Button variant="destructive" type="reset">
-					{/* 🦉 NOTE: this button doesn't work right now, we'll get to that in the accessibility exercise */}
+				<Button
+					// 🐨 add a form prop here and set it to the formId to associate this
+					// button with the form above.
+					variant="destructive"
+					type="reset"
+				>
 					Reset
 				</Button>
 				<StatusButton

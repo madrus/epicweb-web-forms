@@ -1,5 +1,5 @@
 {
-	"name": "exercises__sep__01.form-validation__sep__03.problem.no-validate",
+	"name": "exercises__sep__02.accessibility__sep__01.problem.labels",
 	"private": true,
 	"sideEffects": false,
 	"type": "module",
@@ -14,7 +14,8 @@
 		"test": "playwright test",
 		"start": "cross-env NODE_ENV=production node .",
 		"lint": "eslint .",
-		"typecheck": "tsc"
+		"typecheck": "tsc",
+		"reinstall": "npx rimraf node_modules package-lock.json && npm i"
 	},
 	"dependencies": {
 		"@conform-to/react": "^0.9.0",

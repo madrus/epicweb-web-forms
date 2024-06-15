@@ -1,56 +1,42 @@
-# Disable Default Validation
+# Field Labels
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/fixing-form-reset-button-and-accessibility-issues" />
 
-We want to disable the default browser validation for our form only when the component is mounted (hydrated).
-For that we create a hook `useHydrated` that checks if the component is mounted and use this hook in our form:
-
-```tsx
-const isHydrated = useHydrated()
-```
-
-> The idea behind this is that React hooks don't run on the server. So, as long as the component is not mounted,
-> the hook will return `false`.
-
-Now we can disable the default browser validation when the component is mounted:
+👨‍💼 We need to update the accessibility of our note edit form. The current
+implementation is not accessible because the `<label>` and the `<input />` are
+not associated with each other. So it should be something like this:
 
 ```tsx
-<Form noValidate={isHydrated} />
+<div>
+	<label htmlFor="color">Favorite Color</label>
+	<input id="color" type="text" />
+</div>
 ```
 
-If the user is on a really slow network connection or the JavaScript fails to load for some reason,
-then we can get the client-side validation that's built into the browser automatically as well.
-So we have those options and can give the user a nice user experience there.
-If that were to fail somehow or sometimes there's some validation logic that requires the server
-like username must be unique, then our server-side validation will still catch.
-But the benefit of doing this is it means that if the users on a really slow Network connection,
-we don't want to make them have to do a full network request at that moment to determine if the username is unique.
-Even to determent if the title was required or the title was too long or whatever.
-That is why let's do all the validation on the client that we can while we are not hydrated.
-In the case that the users got a really slow network connection, we can also even if we are hydrated
-and it would be nice to have some client-side validation for some of this stuff to to not waste network traffic.
-We are going to implement some of that in the future as well.
+You can test out whether your changes fixed the problem by clicking on the label
+text above the input. If the input is focused, then you've done it! If not,
+then there's still more work to do.
 
-## KcD's Workshop
-
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/form-validation/dynamic-error-validation-with-hooks" />
-
-👨‍💼 Now that we have nice looking error messages we manage ourselves, we want to
-disable the built-in browser errors because they go counter to our design
-aesthetic.
-
-But we don't want to disable them completely, just once our JavaScript has
-loaded to enhance the user experience. Until that time, the browser's built-in
-client-side validation is ok. So, we'll use a little trick to disable them only
-after our React app has hydrated:
+Another issue we've got is the "Reset" button doesn't work. This is because, due
+to styling requirements, our Reset button is outside of the `<form>` element.
+So we need to communicate to the browser that the Reset button is associated
+with the form. Similar to how you associate labels and inputs, we use IDs. We
+can do this by adding a `form` attribute to the button:
 
 ```tsx
-function useHydrated() {
-	const [hydrated, setHydrated] = useState(false)
-	useEffect(() => setHydrated(true), [])
-	return hydrated
-}
+<button form="form-id" type="reset">
+	Reset
+</button>
 ```
 
-We effectively only need to assign the return value of that hook to the
-`noValidate` prop of our form and we're good to go.
+We already do this with our submit button (otherwise it wouldn't work), so you
+can use that as a reference.
+
+Please find Kody in <InlineFile file="app/routes/users+/$username_+/notes.$noteId_.edit.tsx" />
+and make sure the label and input have an association via the `id` and `htmlFor`
+props and the reset and submit buttons are properly associated to the form via
+the `id` and `form` props.
+
+- [📜 `for` attribute on MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/for)
+- [📜 `htmlFor` attribute in React](https://react.dev/reference/react-dom/components/common#common-props)
+- [📜 button `form` attributes on MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#attributes)
