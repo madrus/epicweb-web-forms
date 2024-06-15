@@ -1,5 +1,41 @@
 # Field Labels
 
+## My Notes
+
+Accessibility of inputs requires them to be coupled with the corresponding inputs like this:
+
+```tsx
+<div>
+	<label htmlFor="color">Favorite Color</label>
+	<input id="color" type="text" />
+</div>
+```
+
+We can test out whether our label and input are correctly coupled by clicking on the label text above the input.
+If the input is focused, then you've done it! If not, then there's still more work to do. :smile:
+
+A nice piece of information is that React has an ID-generation util: `useId()` that can be used to generate
+unique IDs on the fly. But there is more to this. It is the hydration consistency between the client and server.
+E.g. we cannot use `Math.random()` as an id because the server will generate a different random number
+than the client. That is why we use React's `useId` hook, which will keep it consistent both on the server render
+as well as on the client render. So we can refresh, and I get the same thing, both server and client.
+The way that ends up looking is this really funky-looking Id. But it doesn't actually matter.
+
+Another issue we've got is the `Reset` button doesn't work. This is because, due to styling requirements,
+our `Reset` button is outside of the `<form>` element. So we need to communicate to the browser
+that the `Reset` button is associated with the form. Similar to how you associate labels and inputs,
+we use IDs. We can do this by adding a form attribute to the button:
+
+```tsx
+<button form="form-id" type="reset">
+	Reset
+</button>
+```
+
+We already do this with our submit button (otherwise it wouldn't work).
+
+## KCD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/fixing-form-reset-button-and-accessibility-issues" />
 
 👨‍💼 We need to update the accessibility of our note edit form. The current
