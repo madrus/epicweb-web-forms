@@ -1,6 +1,3 @@
-import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
-import { Form, useActionData, useLoaderData } from '@remix-run/react'
-import { useEffect, useState } from 'react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -10,6 +7,9 @@ import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
 import { db, updateNote } from '#app/utils/db.server.ts'
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc.tsx'
+import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+import { Form, useActionData, useLoaderData } from '@remix-run/react'
+import { useEffect, useState } from 'react'
 
 export async function loader({ params }: DataFunctionArgs) {
 	const note = db.note.findFirst({
@@ -81,9 +81,15 @@ export async function action({ request, params }: DataFunctionArgs) {
 }
 
 // 🐨 the ErrorList needs to accept an "id" string and apply it to the <ul>
-function ErrorList({ errors }: { errors?: Array<string> | null }) {
+function ErrorList({
+	errors,
+	...rest
+}: {
+	errors?: Array<string> | null
+	rest?: Record<string, unknown>
+}) {
 	return errors?.length ? (
-		<ul className="flex flex-col gap-1">
+		<ul className="flex flex-col gap-1" {...rest}>
 			{errors.map((error, i) => (
 				<li key={i} className="text-[10px] text-foreground-destructive">
 					{error}
@@ -113,11 +119,17 @@ export default function NoteEdit() {
 
 	// 💰 you can create a couple variables here that will be useful below:
 	// formHasErrors - a boolean if there are any errors for the form
+	const formHasErrors = Boolean(formErrors?.length)
 	// formErrorId - a string that's the id for the form error or undefined if there are no errors
+	const formErrorId = formHasErrors ? 'form-errors' : undefined
 	// titleHasErrors - a boolean if there are any errors for the title
+	const titleHasErrors = Boolean(fieldErrors?.title?.length)
 	// titleErrorId - a string that's the id for the title error or undefined if there are no errors
+	const titleErrorId = titleHasErrors ? 'title-errors' : undefined
 	// contentHasErrors - a boolean if there are any errors for the content
+	const contentHasErrors = Boolean(fieldErrors?.content?.length)
 	// contentErrorId - a string that's the id for the content error or undefined if there are no errors
+	const contentErrorId = contentHasErrors ? 'content-errors' : undefined
 
 	return (
 		<div className="absolute inset-0">
@@ -127,6 +139,8 @@ export default function NoteEdit() {
 				method="post"
 				className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
 				// 🐨 add aria-invalid and aria-describedby here
+				aria-invalid={formHasErrors || undefined}
+				aria-describedby={formErrorId}
 			>
 				<div className="flex flex-col gap-1">
 					<div>
@@ -138,10 +152,15 @@ export default function NoteEdit() {
 							required
 							maxLength={titleMaxLength}
 							// 🐨 add aria-invalid and aria-describedby here
+							aria-invalid={titleHasErrors || undefined}
+							aria-describedby={titleErrorId}
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
 							{/* 🐨 add the id here */}
-							<ErrorList errors={fieldErrors?.title} />
+							<ErrorList
+								errors={fieldErrors?.title}
+								{...{ id: 'title-errors' }}
+							/>
 						</div>
 					</div>
 					<div>
@@ -153,15 +172,20 @@ export default function NoteEdit() {
 							required
 							maxLength={contentMaxLength}
 							// 🐨 add aria-invalid and aria-describedby here
+							aria-invalid={contentHasErrors || undefined}
+							aria-describedby={contentErrorId}
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
 							{/* 🐨 add the id here */}
-							<ErrorList errors={fieldErrors?.content} />
+							<ErrorList
+								errors={fieldErrors?.content}
+								{...{ id: 'content-errors' }}
+							/>
 						</div>
 					</div>
 				</div>
 				{/* 🐨 add the form's error id here */}
-				<ErrorList errors={formErrors} />
+				<ErrorList errors={formErrors} {...{ id: 'form-errors' }} />
 			</Form>
 			<div className={floatingToolbarClassName}>
 				<Button form={formId} variant="destructive" type="reset">

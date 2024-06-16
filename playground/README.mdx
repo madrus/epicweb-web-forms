@@ -1,5 +1,56 @@
 # Validation ARIA attributes
 
+## My Notes
+
+In order to improve accessibility, we are also going to add two new properties to our inputs
+and to the form itself. Here is an example of how we can do it for the `title`.
+
+First, we need to add an id parameter to our `ErrorList` function. KCD did a separate id parameter,
+I have used the general `...rest` parameter:
+
+```tsx
+function ErrorList({
+	errors,
+	...rest
+}: {
+	errors?: Array<string> | null
+	rest?: Record<string, unknown>
+}) {
+	return errors?.length ? (
+		<ul className="flex flex-col gap-1" {...rest}>
+			...
+		</ul>
+	) : null
+}
+```
+
+Now, we can add id to our `ErrorList` element:
+
+```tsx
+<div className="min-h-[32px] px-4 pb-3 pt-1">
+	{/* 🐨 add the id here */}
+	<ErrorList errors={fieldErrors?.title} {...{ id: 'title-errors' }} />
+</div>
+```
+
+Next we add `aria-invalid` and `aria-describedby` attributes to our `input` element
+and let it point to the `id` of the `ErrorList` element:
+
+```tsx
+// titleHasErrors - a boolean if there are any errors for the title
+const titleHasErrors = Boolean(fieldErrors?.title?.length)
+// titleErrorId - a string that's the id for the title error or undefined if there are no errors
+const titleErrorId = titleHasErrors ? 'title-errors' : undefined
+
+...
+<input ...>
+	aria-invalid={titleHasErrors || undefined}
+	aria-describedby={titleErrorId}
+</input>
+```
+
+## KCD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/enhancing-error-messages-and-accessibility-with-aria-attributes" />
 
 👨‍💼 Have you heard the first rule of ARIA? Don't use ARIA. If you can use native
