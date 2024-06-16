@@ -1,8 +1,6 @@
-import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
+import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
-
-import { useEffect, useId, useState } from 'react'
-
+import { useEffect, useState } from 'react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -82,6 +80,7 @@ export async function action({ request, params }: DataFunctionArgs) {
 	return redirect(`/users/${params.username}/notes/${params.noteId}`)
 }
 
+// 🐨 the ErrorList needs to accept an "id" string and apply it to the <ul>
 function ErrorList({ errors }: { errors?: Array<string> | null }) {
 	return errors?.length ? (
 		<ul className="flex flex-col gap-1">
@@ -111,8 +110,14 @@ export default function NoteEdit() {
 	const formErrors =
 		actionData?.status === 'error' ? actionData.errors.formErrors : null
 	const isHydrated = useHydrated()
-	const titleId = useId()
-	const contentId = useId()
+
+	// 💰 you can create a couple variables here that will be useful below:
+	// formHasErrors - a boolean if there are any errors for the form
+	// formErrorId - a string that's the id for the form error or undefined if there are no errors
+	// titleHasErrors - a boolean if there are any errors for the title
+	// titleErrorId - a string that's the id for the title error or undefined if there are no errors
+	// contentHasErrors - a boolean if there are any errors for the content
+	// contentErrorId - a string that's the id for the content error or undefined if there are no errors
 
 	return (
 		<div className="absolute inset-0">
@@ -121,53 +126,45 @@ export default function NoteEdit() {
 				noValidate={isHydrated}
 				method="post"
 				className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
+				// 🐨 add aria-invalid and aria-describedby here
 			>
 				<div className="flex flex-col gap-1">
 					<div>
-						{/* 🐨 add an htmlFor attribute here */}
-						<Label htmlFor={titleId}>Title</Label>
+						<Label htmlFor="note-title">Title</Label>
 						<Input
-							// 🐨 add an id attribute here (it should match what you set to htmlFor on the label)
-							// 🦉 the actual value itself doesn't matter, but it should be unique on the page
-							// and it should match the label's htmlFor.
-
-							// 💯 for extra credit, generate the id using React's useId() hook
-							id={titleId}
+							id="note-title"
 							name="title"
 							defaultValue={data.note.title}
 							required
 							maxLength={titleMaxLength}
+							// 🐨 add aria-invalid and aria-describedby here
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							{/* 🐨 add the id here */}
 							<ErrorList errors={fieldErrors?.title} />
 						</div>
 					</div>
 					<div>
-						{/* 🐨 add an htmlFor attribute here */}
-						<Label htmlFor={contentId}>Content</Label>
+						<Label htmlFor="note-content">Content</Label>
 						<Textarea
-							// 🐨 add an id attribute here (it should match what you set to htmlFor on the label)
-							id={contentId}
+							id="note-content"
 							name="content"
 							defaultValue={data.note.content}
 							required
 							maxLength={contentMaxLength}
+							// 🐨 add aria-invalid and aria-describedby here
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							{/* 🐨 add the id here */}
 							<ErrorList errors={fieldErrors?.content} />
 						</div>
 					</div>
 				</div>
+				{/* 🐨 add the form's error id here */}
 				<ErrorList errors={formErrors} />
 			</Form>
 			<div className={floatingToolbarClassName}>
-				<Button
-					// 🐨 add a form prop here and set it to the formId to associate this
-					// button with the form above.
-					form={formId}
-					variant="destructive"
-					type="reset"
-				>
+				<Button form={formId} variant="destructive" type="reset">
 					Reset
 				</Button>
 				<StatusButton

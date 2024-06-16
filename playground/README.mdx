@@ -1,78 +1,81 @@
-# Field Labels
+# Validation ARIA attributes
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/enhancing-error-messages-and-accessibility-with-aria-attributes" />
 
-Accessibility of inputs requires them to be coupled with the corresponding inputs like this:
+👨‍💼 Have you heard the first rule of ARIA? Don't use ARIA. If you can use native
+HTML, do it. If you can't, then use ARIA.
 
-```tsx
+That's the case for our error messages. So, we need to add `aria-invalid="true"`
+and `aria-describedby="error-id"` to the input if there is an error. Otherwise,
+those attributes should not appear (so you'll set them to `undefined` in that
+case). So when the `title` looks good, it should render HTML like this:
+
+```html
 <div>
-	<label htmlFor="color">Favorite Color</label>
-	<input id="color" type="text" />
+	<label class="..." for="note-title">Title</label>
+	<input
+		class="..."
+		id="note-title"
+		name="title"
+		required=""
+		maxlength="100"
+		value="Basic Koala Facts"
+	/>
+	<div class="..."></div>
 </div>
 ```
 
-We can test out whether our label and input are correctly coupled by clicking on the label text above the input.
-If the input is focused, then you've done it! If not, then there's still more work to do. :smile:
+And when the `title` has an error, it should render HTML like this:
 
-A nice piece of information is that React has an ID-generation util: `useId()` that can be used to generate
-unique IDs on the fly. But there is more to this. It is the hydration consistency between the client and server.
-E.g. we cannot use `Math.random()` as an id because the server will generate a different random number
-than the client. That is why we use React's `useId` hook, which will keep it consistent both on the server render
-as well as on the client render. So we can refresh, and I get the same thing, both server and client.
-The way that ends up looking is this really funky-looking Id. But it doesn't actually matter.
-
-Another issue we've got is the `Reset` button doesn't work. This is because, due to styling requirements,
-our `Reset` button is outside of the `<form>` element. So we need to communicate to the browser
-that the `Reset` button is associated with the form. Similar to how you associate labels and inputs,
-we use IDs. We can do this by adding a form attribute to the button:
-
-```tsx
-<button form="form-id" type="reset">
-	Reset
-</button>
-```
-
-We already do this with our submit button (otherwise it wouldn't work).
-
-## KCD's Workshop
-
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/fixing-form-reset-button-and-accessibility-issues" />
-
-👨‍💼 We need to update the accessibility of our note edit form. The current
-implementation is not accessible because the `<label>` and the `<input />` are
-not associated with each other. So it should be something like this:
-
-```tsx
+```html lines=10,11
 <div>
-	<label htmlFor="color">Favorite Color</label>
-	<input id="color" type="text" />
+	<label class="..." for="note-title">Title</label>
+	<input
+		class="..."
+		id="note-title"
+		name="title"
+		required=""
+		maxlength="100"
+		value="Basic Koala Facts"
+		aria-invalid="true"
+		aria-describedby="title-error"
+	/>
+	<div class="...">
+		<ul id="title-error" class="...">
+			<li class="...">Title must be at least 1 character</li>
+		</ul>
+	</div>
 </div>
 ```
 
-You can test out whether your changes fixed the problem by clicking on the label
-text above the input. If the input is focused, then you've done it! If not,
-then there's still more work to do.
-
-Another issue we've got is the "Reset" button doesn't work. This is because, due
-to styling requirements, our Reset button is outside of the `<form>` element.
-So we need to communicate to the browser that the Reset button is associated
-with the form. Similar to how you associate labels and inputs, we use IDs. We
-can do this by adding a `form` attribute to the button:
+Note that `aria-invalid` and `aria-describedby` are not present unless there is
+an error. To accomplish this, you can pass `undefined` as their values if there
+is no error, for example:
 
 ```tsx
-<button form="form-id" type="reset">
-	Reset
-</button>
+<input
+	aria-invalid={hasErrors || undefined}
+	aria-describedby={hasErrors ? 'id' : undefined}
+/>
 ```
 
-We already do this with our submit button (otherwise it wouldn't work), so you
-can use that as a reference.
+The emoji will give you some tips on creating variables to make this easier.
 
-Please find Kody in <InlineFile file="app/routes/users+/$username_+/notes.$noteId_.edit.tsx" />
-and make sure the label and input have an association via the `id` and `htmlFor`
-props and the reset and submit buttons are properly associated to the form via
-the `id` and `form` props.
+🦉 Another thing you may notice is in both cases we're rendering the `div`
+responsible for rendering the error messages. This is to ensure the UI doesn't
+bounce around when an error shows up.
 
-- [📜 `for` attribute on MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/for)
-- [📜 `htmlFor` attribute in React](https://react.dev/reference/react-dom/components/common#common-props)
-- [📜 button `form` attributes on MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#attributes)
+And we do this for more than just the `input`, we'll want this for the `<form>`
+as well. Let's jump in!
+
+<callout-info class="aside">
+	Note that there is also `aria-errormessage`, however screen reader support is
+	unfortunately very poor for that attribute. We just need to do the best we
+	can.
+</callout-info>
+
+<callout-warning>
+	We don't currently have any form-level errors, but we're going to put this in
+	place anyway for learning purposes. Eventually we'll have some errors like
+	that.
+</callout-warning>
