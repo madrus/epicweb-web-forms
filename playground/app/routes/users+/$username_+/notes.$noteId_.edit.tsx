@@ -1,6 +1,8 @@
-import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
-import { useEffect, useState } from 'react'
+
+import { useEffect, useRef, useState } from 'react'
+
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -108,6 +110,7 @@ export default function NoteEdit() {
 	const data = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
 	// 🐨 create a ref for the form element
+	const formRef = useRef(null)
 	const formId = 'note-editor'
 	const isSubmitting = useIsSubmitting()
 
@@ -127,14 +130,29 @@ export default function NoteEdit() {
 	// 🐨 add a useEffect that focuses on the first element in the form that
 	// has an error whenever the actionData changes
 	//   (💰 so the dependency array should include the actionData).
-	// 💰 we only care to focus on an element if:
-	// - the formRef.current is truthy
-	// - the actionData is in an error status
-	// 🐨 if the formRef.current matches the query [aria-invalid="true"] then
-	// focus on the form otherwise, run formRef.current.querySelector to find the
-	// first [aria-invalid="true"] HTMLElement and focus that one instead.
-	// 📜 https://mdn.io/element.matches
-	// 🦺 You may need to add an instanceof HTMLElement check to be able to focus it.
+	useEffect(() => {
+		// 💰 we only care to focus on an element if:
+		// - the formRef.current is truthy
+		// - the actionData is in an error status
+		if (!formRef.current || actionData?.status !== 'error') return
+
+		// 🐨 if the formRef.current matches the query [aria-invalid="true"] then
+		// focus on the form
+		const formElement = formRef.current as HTMLElement
+		const firstInvalidElement = formElement.querySelector(
+			'[aria-invalid="true"]',
+		) as HTMLElement
+
+		if (formElement === firstInvalidElement) {
+			formElement?.focus()
+		} else {
+			// otherwise, run formRef.current.querySelector to find the
+			// first [aria-invalid="true"] HTMLElement and focus that one instead.
+			// 📜 https://mdn.io/element.matches
+			// 🦺 You may need to add an instanceof HTMLElement check to be able to focus it.
+			firstInvalidElement?.focus()
+		}
+	}, [actionData?.status])
 
 	return (
 		<div className="absolute inset-0">
@@ -147,8 +165,10 @@ export default function NoteEdit() {
 				aria-describedby={formErrorId}
 				// 🐨 add the form ref prop here
 				// 📜 https://react.dev/reference/react/useRef#manipulating-the-dom-with-a-ref
+				ref={formRef}
 				// 🐨 add a tabIndex={-1} here so we can programmatically focus on the form
 				// 📜 https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
+				tabIndex={-1}
 			>
 				<div className="flex flex-col gap-1">
 					<div>
@@ -162,6 +182,7 @@ export default function NoteEdit() {
 							aria-invalid={titleHasErrors || undefined}
 							aria-describedby={titleErrorId}
 							// 🐨 add autoFocus here
+							autoFocus
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
 							<ErrorList id={titleErrorId} errors={fieldErrors?.title} />
