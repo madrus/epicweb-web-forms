@@ -110,7 +110,7 @@ export default function NoteEdit() {
 	const data = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
 	// 🐨 create a ref for the form element
-	const formRef = useRef(null)
+	const formRef = useRef<HTMLFormElement>(null)
 	const formId = 'note-editor'
 	const isSubmitting = useIsSubmitting()
 
@@ -134,25 +134,27 @@ export default function NoteEdit() {
 		// 💰 we only care to focus on an element if:
 		// - the formRef.current is truthy
 		// - the actionData is in an error status
-		if (!formRef.current || actionData?.status !== 'error') return
+		const formElement = formRef.current
+		if (!formElement) return
+		if (actionData?.status !== 'error') return
 
 		// 🐨 if the formRef.current matches the query [aria-invalid="true"] then
 		// focus on the form
-		const formElement = formRef.current as HTMLElement
-		const firstInvalidElement = formElement.querySelector(
-			'[aria-invalid="true"]',
-		) as HTMLElement
-
-		if (formElement === firstInvalidElement) {
-			formElement?.focus()
+		if (formElement.matches('[aria-invalid="true"]')) {
+			formElement.focus()
 		} else {
+			const firstInvalidElement = formElement.querySelector(
+				'[aria-invalid="true"]',
+			)
 			// otherwise, run formRef.current.querySelector to find the
 			// first [aria-invalid="true"] HTMLElement and focus that one instead.
 			// 📜 https://mdn.io/element.matches
 			// 🦺 You may need to add an instanceof HTMLElement check to be able to focus it.
-			firstInvalidElement?.focus()
+			if (firstInvalidElement instanceof HTMLElement) {
+				firstInvalidElement.focus()
+			}
 		}
-	}, [actionData?.status])
+	}, [actionData])
 
 	return (
 		<div className="absolute inset-0">

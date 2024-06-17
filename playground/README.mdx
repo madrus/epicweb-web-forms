@@ -1,5 +1,20 @@
 # Focus Management
 
+## My Notes
+
+> **KCD**
+> We can include the whole `actionData` as a dependency, not just `actionData?.status`
+> because if the status changes the whole actionData object will change anyway
+>
+> Form elements same as divs and spans are not focusable unless we add a `tabIndex``
+of negative 1: `tabIndex={-1}`. A negative index does not allow user to tab focus
+> on the element but it allows us to programmatically do that.
+>
+> When the form gets focus because of an error, the first time you tab again, you will
+> be focused on the first error field.
+
+## KCD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/focus-management-for-better-user-experience" />
 
 👨‍💼 A lot of what we do for accessibility in the web is manage the user's
