@@ -1,132 +1,26 @@
-# Validation ARIA attributes
+# Focus Management
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/focus-management-for-better-user-experience" />
 
-In order to improve accessibility, we are also going to add two new properties to our inputs
-and to the form itself. Here is an example of how we can do it for the `title`.
+👨‍💼 A lot of what we do for accessibility in the web is manage the user's
+keyboard focus. It can be really annoying if I click a "submit" button, and then
+I have to find the field that caused the error I'm seeing. Wouldn't it be nice
+if the focus moved to the field that has an error?
 
-First, we need to add an id parameter to our `ErrorList` function. KCD did a separate id parameter,
-I have used the general `...rest` parameter:
+And what if there are two fields with an error? I think it would be best to
+focus on the first one.
 
-```tsx
-function ErrorList({
-	errors,
-	...rest
-}: {
-	errors?: Array<string> | null
-	rest?: Record<string, unknown>
-}) {
-	return errors?.length ? (
-		<ul className="flex flex-col gap-1" {...rest}>
-			...
-		</ul>
-	) : null
-}
-```
+And what if the entire form has an error? Well, we should probably focus on the
+form itself and the screen reader will announce the user the issue with the
+form.
 
-Now, we can add id to our `ErrorList` element:
+So that's what I'd like you to do next. This is the perfect use case for
+`useEffect`, but don't worry, the dependency list here is going to be quite
+simple.
 
-```tsx
-<div className="min-h-[32px] px-4 pb-3 pt-1">
-	{/* 🐨 add the id here */}
-	<ErrorList errors={fieldErrors?.title} {...{ id: 'title-errors' }} />
-</div>
-```
+The emoji will guide you through this one.
 
-Next we add `aria-invalid` and `aria-describedby` attributes to our `input` element
-and let it point to the `id` of the `ErrorList` element:
-
-```tsx
-// titleHasErrors - a boolean if there are any errors for the title
-const titleHasErrors = Boolean(fieldErrors?.title?.length)
-// titleErrorId - a string that's the id for the title error or undefined if there are no errors
-const titleErrorId = titleHasErrors ? 'title-errors' : undefined
-
-...
-<input ...>
-	aria-invalid={titleHasErrors || undefined}
-	aria-describedby={titleErrorId}
-</input>
-```
-
-## KCD's Workshop
-
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/enhancing-error-messages-and-accessibility-with-aria-attributes" />
-
-👨‍💼 Have you heard the first rule of ARIA? Don't use ARIA. If you can use native
-HTML, do it. If you can't, then use ARIA.
-
-That's the case for our error messages. So, we need to add `aria-invalid="true"`
-and `aria-describedby="error-id"` to the input if there is an error. Otherwise,
-those attributes should not appear (so you'll set them to `undefined` in that
-case). So when the `title` looks good, it should render HTML like this:
-
-```html
-<div>
-	<label class="..." for="note-title">Title</label>
-	<input
-		class="..."
-		id="note-title"
-		name="title"
-		required=""
-		maxlength="100"
-		value="Basic Koala Facts"
-	/>
-	<div class="..."></div>
-</div>
-```
-
-And when the `title` has an error, it should render HTML like this:
-
-```html lines=10,11
-<div>
-	<label class="..." for="note-title">Title</label>
-	<input
-		class="..."
-		id="note-title"
-		name="title"
-		required=""
-		maxlength="100"
-		value="Basic Koala Facts"
-		aria-invalid="true"
-		aria-describedby="title-error"
-	/>
-	<div class="...">
-		<ul id="title-error" class="...">
-			<li class="...">Title must be at least 1 character</li>
-		</ul>
-	</div>
-</div>
-```
-
-Note that `aria-invalid` and `aria-describedby` are not present unless there is
-an error. To accomplish this, you can pass `undefined` as their values if there
-is no error, for example:
-
-```tsx
-<input
-	aria-invalid={hasErrors || undefined}
-	aria-describedby={hasErrors ? 'id' : undefined}
-/>
-```
-
-The emoji will give you some tips on creating variables to make this easier.
-
-🦉 Another thing you may notice is in both cases we're rendering the `div`
-responsible for rendering the error messages. This is to ensure the UI doesn't
-bounce around when an error shows up.
-
-And we do this for more than just the `input`, we'll want this for the `<form>`
-as well. Let's jump in!
-
-<callout-info class="aside">
-	Note that there is also `aria-errormessage`, however screen reader support is
-	unfortunately very poor for that attribute. We just need to do the best we
-	can.
+<callout-info>
+	While we're at it, let's add `autoFocus` to the `title` field, so folks can
+	start typing right away.
 </callout-info>
-
-<callout-warning>
-	We don't currently have any form-level errors, but we're going to put this in
-	place anyway for learning purposes. Eventually we'll have some errors like
-	that.
-</callout-warning>
