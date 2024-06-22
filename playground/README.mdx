@@ -1,80 +1,75 @@
-# Zod schema validation
+# Conform action utils
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/form-data-parsing-with-conform" />
 
-Here is our definition of the Zod schema:
+👨‍💼 Having to create an object out of `formData` is troublesome. We can actually
+call `Object.fromEntries(formData)` and that'll work for our simple case, but
+it's pretty limited and doesn't work for nested objects (which we'll get to
+later). So let's use Conform's utilities to update our `action` to parse our
+`formData` and parse it with Zod for us:
 
-```tsx
-const titleMaxLength = 100
-const contentMaxLength = 10000
+Here's the relevant part of the example from the background info we saw earlier:
 
-const NoteEditorSchema = z.object({
-	title: z
-		.string()
-		.min(1, {
-			message: 'Title is required',
-		})
-		.max(titleMaxLength, {
-			message: `Title must be at most ${titleMaxLength} characters`,
-		}),
-	content: z
-		.string()
-		.min(1, {
-			message: 'Content is required',
-		})
-		.max(contentMaxLength, {
-			message: `Content must be at most ${contentMaxLength} characters`,
-		}),
+```tsx lines=1,15-17,19-25,27-32,34,38-46
+import { getFieldsetConstraint, parse } from '@conform-to/zod'
+import { Form } from '@remix-run/react'
+import { json, redirect } from '@remix-run/node'
+import { z } from 'zod'
+
+const LoginSchema = z.object({
+	email: z
+		.string({ required_error: 'Email is required' })
+		.email('Email is invalid'),
+	password: z.string({ required_error: 'Password is required' }),
 })
-```
 
-Notice that requiring a non-empty value of the title and content is done by specifying `min(1)`
-as an empty string is considered as a valid value by Zod.
+export async function action({ request }: DataFunctionArgs) {
+	const formData = await request.formData()
+	const submission = parse(formData, {
+		schema: LoginSchema,
+	})
 
-Also, we can add our own custom error messages although it is optional. Zod has its own
-default error messages. I think that custom messages would definitely be useful
-in a multi-language setting.
+	if (submission.intent !== 'submit') {
+		// the user hasn't submitted the form yet
+		// this will happen if Conform is validating the form before submission
+		// (like if we configure Conform to validate onBlur)
+		// We'll not add this yet, we'll get to it later.
+		return json({ status: 'idle', submission } as const)
+	}
 
-## KCD's Workshop
+	if (!submission.value) {
+		// there's no value because there is an error in the form
+		return json({ status: 'error', submission } as const, {
+			status: 400,
+		})
+	}
 
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/schema-validation" />
+	const { email, password } = submission.value
 
-🧝‍♂️ BTW, I swapped your `useEffect` for a custom `useFocusInvalid` hook, just so
-you know.
+	const isAuthenticated = await authenticate({ email, password })
+	if (!isAuthenticated) {
+		// set the form error:
+		submission.error[''] = ['Invalid email or password']
+		return json(
+			{
+				status: 'error',
+				submission,
+			} as const,
+			{ status: 401 },
+		)
+	}
 
-👨‍💼 Let's make our validation better and more declarative. Prepare to delete a
-lot of code!
-
-One important thing you'll want to know is how Zod manages errors. When you use
-`zodSchema.parse`, it will throw an error if the data is invalid. If you use
-`zodSchema.safeParse`, it will return an object with a `success` property that
-tells you whether the data is valid or not. If it's not valid, it will also
-have an `error` property that contains the error object. If it is valid, it
-will have a `data` property that contains the parsed data.
-
-The [Error Handling](https://zod.dev/ERROR_HANDLING) docs can be quite helpful.
-You'll definitely want to use
-[`.flatten`](https://zod.dev/ERROR_HANDLING?id=flattening-errors) for this one:
-
-```tsx
-if (!result.success) {
-	console.log(result.error.flatten())
+	return redirect('/dashboard')
 }
-/*
-  {
-    formErrors: [],
-    fieldErrors: {
-      name: ['Expected string, received null'],
-      contactInfo: ['Invalid email']
-    },
-  }
-*/
 ```
 
-That shape may look a little familiar 😅
+Could you update our form to use this in the `action`? This will require a few
+changes in the UI as well because the errors are _slightly_ different and we'll
+be passing back a `submission` object instead of just the `errors`.
 
-That should be enough to get you going.
+🦉 I'd like you to check out what the `submission` object looks like in the
+network tab or log it to the console. Why do you suppose all that information is
+necessary?
 
-- [📜 Zod docs](https://zod.dev)
-- [📜 Zod Error Handling](https://zod.dev/ERROR_HANDLING)
-- [📜 Zod Flattening Errors](https://zod.dev/ERROR_HANDLING?id=flattening-errors)
+- [📜 `@conform-to/zod`](https://conform.guide/api/zod)
+- [📜 Conform Validation](https://conform.guide/validation)
