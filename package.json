@@ -95,5 +95,8 @@
     ".env",
     "**/package-lock.json",
     "**/playwright-report/**"
-  ]
+  ],
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
 }

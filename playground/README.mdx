@@ -1,5 +1,42 @@
 # Zod schema validation
 
+## My Notes
+
+Here is our definition of the Zod schema:
+
+```tsx
+const titleMaxLength = 100
+const contentMaxLength = 10000
+
+const NoteEditorSchema = z.object({
+	title: z
+		.string()
+		.min(1, {
+			message: 'Title is required',
+		})
+		.max(titleMaxLength, {
+			message: `Title must be at most ${titleMaxLength} characters`,
+		}),
+	content: z
+		.string()
+		.min(1, {
+			message: 'Content is required',
+		})
+		.max(contentMaxLength, {
+			message: `Content must be at most ${contentMaxLength} characters`,
+		}),
+})
+```
+
+Notice that requiring a non-empty value of the title and content is done by specifying `min(1)`
+as an empty string is considered as a valid value by Zod.
+
+Also, we can add our own custom error messages although it is optional. Zod has its own
+default error messages. I think that custom messages would definitely be useful
+in a multi-language setting.
+
+## KCD's Workshop
+
 <EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/schema-validation" />
 
 🧝‍♂️ BTW, I swapped your `useEffect` for a custom `useFocusInvalid` hook, just so

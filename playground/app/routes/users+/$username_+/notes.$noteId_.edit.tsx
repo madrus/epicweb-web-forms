@@ -1,6 +1,8 @@
-import { json, redirect, type DataFunctionArgs } from '@remix-run/node'
+import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
+
 import { useEffect, useRef, useState } from 'react'
+
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -14,6 +16,8 @@ import {
 	useFocusInvalid,
 	useIsSubmitting,
 } from '#app/utils/misc.tsx'
+
+import { z } from 'zod'
 
 export async function loader({ params }: DataFunctionArgs) {
 	const note = db.note.findFirst({
@@ -33,68 +37,90 @@ export async function loader({ params }: DataFunctionArgs) {
 
 // 💣 We can get rid of this type now that we're bringing in Zod schema validation
 // which will generate types for us.
-type ActionErrors = {
-	formErrors: Array<string>
-	fieldErrors: {
-		title: Array<string>
-		content: Array<string>
-	}
-}
+// type ActionErrors = {
+// 	formErrors: Array<string>
+// 	fieldErrors: {
+// 		title: Array<string>
+// 		content: Array<string>
+// 	}
+// }
 
 const titleMaxLength = 100
 const contentMaxLength = 10000
 
 // 🐨 Create a schema called NoteEditorSchema which is an object and has
 // the title and content fields. You'll use string, min, and max.
+const NoteEditorSchema = z.object({
+	title: z
+		.string()
+		.min(1, { message: 'Title is required' })
+		.max(titleMaxLength, {
+			message: `Title must be at most ${titleMaxLength} characters`,
+		}),
+	content: z
+		.string()
+		.min(1, { message: 'Content is required' })
+		.max(contentMaxLength, {
+			message: `Content must be at most ${contentMaxLength} characters`,
+		}),
+})
 
 export async function action({ request, params }: DataFunctionArgs) {
 	invariantResponse(params.noteId, 'noteId param is required')
 
 	const formData = await request.formData()
 	// 💣 remove everything between this line and the next 💣 line
-	const title = formData.get('title')
-	const content = formData.get('content')
-	invariantResponse(typeof title === 'string', 'title must be a string')
-	invariantResponse(typeof content === 'string', 'content must be a string')
+	// const title = formData.get('title')
+	// const content = formData.get('content')
+	// invariantResponse(typeof title === 'string', 'title must be a string')
+	// invariantResponse(typeof content === 'string', 'content must be a string')
 
-	const errors: ActionErrors = {
-		formErrors: [],
-		fieldErrors: {
-			title: [],
-			content: [],
-		},
-	}
+	// const errors: ActionErrors = {
+	// 	formErrors: [],
+	// 	fieldErrors: {
+	// 		title: [],
+	// 		content: [],
+	// 	},
+	// }
 
-	if (title === '') {
-		errors.fieldErrors.title.push('Title is required')
-	}
-	if (title.length > titleMaxLength) {
-		errors.fieldErrors.title.push('Title must be at most 100 characters')
-	}
-	if (content === '') {
-		errors.fieldErrors.content.push('Content is required')
-	}
-	if (content.length > contentMaxLength) {
-		errors.fieldErrors.content.push('Content must be at most 10000 characters')
-	}
+	// if (title === '') {
+	// 	errors.fieldErrors.title.push('Title is required')
+	// }
+	// if (title.length > titleMaxLength) {
+	// 	errors.fieldErrors.title.push('Title must be at most 100 characters')
+	// }
+	// if (content === '') {
+	// 	errors.fieldErrors.content.push('Content is required')
+	// }
+	// if (content.length > contentMaxLength) {
+	// 	errors.fieldErrors.content.push('Content must be at most 10000 characters')
+	// }
 
-	const hasErrors =
-		errors.formErrors.length ||
-		Object.values(errors.fieldErrors).some(fieldErrors => fieldErrors.length)
+	// const hasErrors =
+	// 	errors.formErrors.length ||
+	// 	Object.values(errors.fieldErrors).some(fieldErrors => fieldErrors.length)
 	// 💣 remove everything between this line and the previous 💣 line
 	// Yeah! That's a lot of stuff we can delete 🤯
 
 	// 🐨 use the NoteEditorSchema.safeParse method to parse an object from the formData
 	// 💰 { title: formData.get('title'), content: formData.get('content') }
+	// const result = NoteEditorSchema.safeParse(formData)
+	const result = NoteEditorSchema.safeParse({
+		title: formData.get('title'),
+		content: formData.get('content'),
+	})
 
 	// 🐨 change this from hasErrors to !result.success
-	if (hasErrors) {
+	if (!result.success) {
 		// 🐨 you can use result.error.flatten() to get the errors and it'll give
 		// you a very similar object to what we had before! (it's almost like we planned this 🧐)
-		return json({ status: 'error', errors } as const, { status: 400 })
+		return json({ status: 'error', errors: result.error.flatten() } as const, {
+			status: 400,
+		})
 	}
 	// 🐨 now you can get the title and content from result.data
 	// 🦺 It's nice and typesafe too 🎉
+	const { title, content } = result.data
 
 	await updateNote({ id: params.noteId, title, content })
 
@@ -141,10 +167,10 @@ export default function NoteEdit() {
 	const formHasErrors = Boolean(formErrors?.length)
 	const formErrorId = formHasErrors ? 'form-error' : undefined
 	// 🐨 the title may be undefined on the fieldErrors, so add a ? after "title" here:
-	const titleHasErrors = Boolean(fieldErrors?.title.length)
+	const titleHasErrors = Boolean(fieldErrors?.title?.length)
 	const titleErrorId = titleHasErrors ? 'title-error' : undefined
 	// 🐨 the content may be undefined on the fieldErrors, so add a ? after "content" here:
-	const contentHasErrors = Boolean(fieldErrors?.content.length)
+	const contentHasErrors = Boolean(fieldErrors?.content?.length)
 	const contentErrorId = contentHasErrors ? 'content-error' : undefined
 
 	useFocusInvalid(
