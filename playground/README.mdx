@@ -1,41 +1,43 @@
-# Focus Management
+# Zod schema validation
 
-## My Notes
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/schema-validation" />
 
-> **KCD**
-> We can include the whole `actionData` as a dependency, not just `actionData?.status`
-> because if the status changes the whole actionData object will change anyway
->
-> Form elements same as divs and spans are not focusable unless we add a `tabIndex``
-of negative 1: `tabIndex={-1}`. A negative index does not allow user to tab focus
-> on the element but it allows us to programmatically do that.
->
-> When the form gets focus because of an error, the first time you tab again, you will
-> be focused on the first error field.
+🧝‍♂️ BTW, I swapped your `useEffect` for a custom `useFocusInvalid` hook, just so
+you know.
 
-## KCD's Workshop
+👨‍💼 Let's make our validation better and more declarative. Prepare to delete a
+lot of code!
 
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/accessibility/focus-management-for-better-user-experience" />
+One important thing you'll want to know is how Zod manages errors. When you use
+`zodSchema.parse`, it will throw an error if the data is invalid. If you use
+`zodSchema.safeParse`, it will return an object with a `success` property that
+tells you whether the data is valid or not. If it's not valid, it will also
+have an `error` property that contains the error object. If it is valid, it
+will have a `data` property that contains the parsed data.
 
-👨‍💼 A lot of what we do for accessibility in the web is manage the user's
-keyboard focus. It can be really annoying if I click a "submit" button, and then
-I have to find the field that caused the error I'm seeing. Wouldn't it be nice
-if the focus moved to the field that has an error?
+The [Error Handling](https://zod.dev/ERROR_HANDLING) docs can be quite helpful.
+You'll definitely want to use
+[`.flatten`](https://zod.dev/ERROR_HANDLING?id=flattening-errors) for this one:
 
-And what if there are two fields with an error? I think it would be best to
-focus on the first one.
+```tsx
+if (!result.success) {
+	console.log(result.error.flatten())
+}
+/*
+  {
+    formErrors: [],
+    fieldErrors: {
+      name: ['Expected string, received null'],
+      contactInfo: ['Invalid email']
+    },
+  }
+*/
+```
 
-And what if the entire form has an error? Well, we should probably focus on the
-form itself and the screen reader will announce the user the issue with the
-form.
+That shape may look a little familiar 😅
 
-So that's what I'd like you to do next. This is the perfect use case for
-`useEffect`, but don't worry, the dependency list here is going to be quite
-simple.
+That should be enough to get you going.
 
-The emoji will guide you through this one.
-
-<callout-info>
-	While we're at it, let's add `autoFocus` to the `title` field, so folks can
-	start typing right away.
-</callout-info>
+- [📜 Zod docs](https://zod.dev)
+- [📜 Zod Error Handling](https://zod.dev/ERROR_HANDLING)
+- [📜 Zod Flattening Errors](https://zod.dev/ERROR_HANDLING?id=flattening-errors)
