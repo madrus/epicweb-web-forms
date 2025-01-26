@@ -33,10 +33,14 @@ module.exports = {
 		},
 	],
 	plugins: ['@trivago/prettier-plugin-sort-imports'],
+	importOrderSeparation: true,
+	importOrderSortSpecifiers: true,
+	importOrderCaseInsensitive: true,
 	importOrder: [
 		'^node',
 		'^@remix-run/(css-bundle|node|react)',
 		'^react',
+		'^zod',
 		'^@',
 		'^(jest)(.*)',
 		'^(src|test)(.*)',
@@ -44,7 +48,4 @@ module.exports = {
 		'^[./]',
 		'^.*',
 	],
-	importOrderSeparation: true,
-	importOrderSortSpecifiers: true,
-	importOrderCaseInsensitive: true,
 }
