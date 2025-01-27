@@ -1,8 +1,9 @@
+import { parse } from '@conform-to/zod'
+
 import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
 
 import { useEffect, useRef, useState } from 'react'
-
 import { z } from 'zod'
 
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
@@ -51,24 +52,22 @@ export async function action({ request, params }: DataFunctionArgs) {
 	// 🐨 swap this for parse from conform, passing the formData as the first argument
 	// 🐨 For the options, provide NoteEditorSchema as the "schema"
 	// 🦉 it's common convention to call the variable assigned to the parse call "submission"
-	const result = NoteEditorSchema.safeParse({
-		title: formData.get('title'),
-		content: formData.get('content'),
-	})
+	const submission = parse(formData, { schema: NoteEditorSchema })
+	console.log(submission)
 
 	// instead of result.success, we can use submission.value. If there's no submission.value,
 	// then there will be errors.
 	// 🐨 replace "!result.success" with "!submission.value"
-	if (!result.success) {
+	if (!submission.value) {
 		// instead of sending back "errors," we want to send back the entire "submission"
 		// 🐨 replace "errors: result.error.flatten()" with "submission"
-		return json({ status: 'error', errors: result.error.flatten() } as const, {
+		return json({ status: 'error', submission } as const, {
 			status: 400,
 		})
 	}
 	// if there were no errors, we can get the (typesafe!! 🦺) values from submission.value
 	// 🐨 replace "result.data" with "submission.value"
-	const { title, content } = result.data
+	const { title, content } = submission.value
 
 	await updateNote({ id: params.noteId, title, content })
 
@@ -108,11 +107,11 @@ export default function NoteEdit() {
 
 	// 🐨 instead of actionData.errors.fieldErrors, we'll use actionData.submission.error
 	const fieldErrors =
-		actionData?.status === 'error' ? actionData.errors.fieldErrors : null
+		actionData?.status === 'error' ? actionData.submission.error : null
 	// 🐨 instead of actionData.errors.formErrors, we'll use actionData.submission.error['']
 	// (Yeah, it's weird and will change... https://github.com/edmundhung/conform/issues/211)
 	const formErrors =
-		actionData?.status === 'error' ? actionData.errors.formErrors : null
+		actionData?.status === 'error' ? actionData.submission.error[''] : null
 	const isHydrated = useHydrated()
 
 	const formHasErrors = Boolean(formErrors?.length)
