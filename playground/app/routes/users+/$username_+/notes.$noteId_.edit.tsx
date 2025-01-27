@@ -1,11 +1,13 @@
 import { parse } from '@conform-to/zod'
-
-import { type DataFunctionArgs, json, redirect } from '@remix-run/node'
+import {
+	json,
+	redirect,
+	type ActionFunctionArgs,
+	type LoaderFunctionArgs,
+} from '@remix-run/node'
 import { Form, useActionData, useLoaderData } from '@remix-run/react'
-
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
-
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -20,7 +22,7 @@ import {
 	useIsSubmitting,
 } from '#app/utils/misc.tsx'
 
-export async function loader({ params }: DataFunctionArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
 	const note = db.note.findFirst({
 		where: {
 			id: {
@@ -44,29 +46,17 @@ const NoteEditorSchema = z.object({
 	content: z.string().max(contentMaxLength),
 })
 
-export async function action({ request, params }: DataFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
 	invariantResponse(params.noteId, 'noteId param is required')
 
 	const formData = await request.formData()
+	const submission = parse(formData, {
+		schema: NoteEditorSchema,
+	})
 
-	// 🐨 swap this for parse from conform, passing the formData as the first argument
-	// 🐨 For the options, provide NoteEditorSchema as the "schema"
-	// 🦉 it's common convention to call the variable assigned to the parse call "submission"
-	const submission = parse(formData, { schema: NoteEditorSchema })
-	console.log(submission)
-
-	// instead of result.success, we can use submission.value. If there's no submission.value,
-	// then there will be errors.
-	// 🐨 replace "!result.success" with "!submission.value"
 	if (!submission.value) {
-		// instead of sending back "errors," we want to send back the entire "submission"
-		// 🐨 replace "errors: result.error.flatten()" with "submission"
-		return json({ status: 'error', submission } as const, {
-			status: 400,
-		})
+		return json({ status: 'error', submission } as const, { status: 400 })
 	}
-	// if there were no errors, we can get the (typesafe!! 🦺) values from submission.value
-	// 🐨 replace "result.data" with "submission.value"
 	const { title, content } = submission.value
 
 	await updateNote({ id: params.noteId, title, content })
@@ -92,6 +82,7 @@ function ErrorList({
 	) : null
 }
 
+// 💣 You can delete this hook. Conform will handle this for us.
 function useHydrated() {
 	const [hydrated, setHydrated] = useState(false)
 	useEffect(() => setHydrated(true), [])
@@ -101,15 +92,15 @@ function useHydrated() {
 export default function NoteEdit() {
 	const data = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
+	// 💣 we don't need the formRef anymore
 	const formRef = useRef<HTMLFormElement>(null)
+	// 💣 we don't need the formId anymore
 	const formId = 'note-editor'
 	const isSubmitting = useIsSubmitting()
 
-	// 🐨 instead of actionData.errors.fieldErrors, we'll use actionData.submission.error
+	// 💣 delete everything between here and the next 💣
 	const fieldErrors =
 		actionData?.status === 'error' ? actionData.submission.error : null
-	// 🐨 instead of actionData.errors.formErrors, we'll use actionData.submission.error['']
-	// (Yeah, it's weird and will change... https://github.com/edmundhung/conform/issues/211)
 	const formErrors =
 		actionData?.status === 'error' ? actionData.submission.error[''] : null
 	const isHydrated = useHydrated()
@@ -125,23 +116,34 @@ export default function NoteEdit() {
 		formRef.current,
 		actionData?.status === 'error' && !isSubmitting,
 	)
+	// 💣 delete everything between here and the previous 💣
+	// Conform does a lot for us huh!? 🤯
+
+	// 🐨 add your useForm config here
+	// 💰 reference the instructions for what it should look like
+	// 💰 make sure to check on the defaultValue in the instructions as well
 
 	return (
 		<div className="absolute inset-0">
 			<Form
+				// 💣 delete the id and noValidate props
 				id={formId}
 				noValidate={isHydrated}
 				method="post"
 				className="flex h-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden px-10 pb-28 pt-12"
+				// 💣 delete the rest of these props
 				aria-invalid={formHasErrors || undefined}
 				aria-describedby={formErrorId}
 				ref={formRef}
 				tabIndex={-1}
+				// 🐨 add {...form.props} here
 			>
 				<div className="flex flex-col gap-1">
 					<div>
+						{/* 🐨 replace the hard-coded "note-title" for fields.title.id */}
 						<Label htmlFor="note-title">Title</Label>
 						<Input
+							// 💣 everything between here and the next 💣 can be deleted
 							id="note-title"
 							name="title"
 							defaultValue={data.note.title}
@@ -149,15 +151,21 @@ export default function NoteEdit() {
 							maxLength={titleMaxLength}
 							aria-invalid={titleHasErrors || undefined}
 							aria-describedby={titleErrorId}
+							// 💣 everything between here and the previous 💣 can be deleted
 							autoFocus
+							// 🐨 add {...conform.input(fields.title)} here
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							{/* 🐨 get the id from fields.title.errorId */}
+							{/* 🐨 get the errors from fields.title.errors */}
 							<ErrorList id={titleErrorId} errors={fieldErrors?.title} />
 						</div>
 					</div>
 					<div>
+						{/* 🐨 replace the hard-coded "note-content" for fields.content.id */}
 						<Label htmlFor="note-content">Content</Label>
 						<Textarea
+							// 💣 everything between here and the next 💣 can be deleted
 							id="note-content"
 							name="content"
 							defaultValue={data.note.content}
@@ -165,19 +173,27 @@ export default function NoteEdit() {
 							maxLength={contentMaxLength}
 							aria-invalid={contentHasErrors || undefined}
 							aria-describedby={contentErrorId}
+							// 💣 everything between here and the previous 💣 can be deleted
+							// 🐨 add {...conform.textarea(fields.content)} here
 						/>
 						<div className="min-h-[32px] px-4 pb-3 pt-1">
+							{/* 🐨 get the id from fields.content.errorId */}
+							{/* 🐨 get the errors from fields.content.errors */}
 							<ErrorList id={contentErrorId} errors={fieldErrors?.content} />
 						</div>
 					</div>
 				</div>
+				{/* 🐨 get the id from form.errorId */}
+				{/* 🐨 get the errors from form.errors */}
 				<ErrorList id={formErrorId} errors={formErrors} />
 			</Form>
 			<div className={floatingToolbarClassName}>
+				{/* 🐨 replace formId with form.id */}
 				<Button form={formId} variant="destructive" type="reset">
 					Reset
 				</Button>
 				<StatusButton
+					// 🐨 replace formId with form.id
 					form={formId}
 					type="submit"
 					disabled={isSubmitting}

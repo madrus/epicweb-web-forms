@@ -1,16 +1,19 @@
-# Conform action utils
+# Conform form utils
 
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/form-data-parsing-with-conform" />
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/type-safety-with-conform" />
 
-👨‍💼 Having to create an object out of `formData` is troublesome. We can actually
-call `Object.fromEntries(formData)` and that'll work for our simple case, but
-it's pretty limited and doesn't work for nested objects (which we'll get to
-later). So let's use Conform's utilities to update our `action` to parse our
-`formData` and parse it with Zod for us:
+👨‍💼 The backend is only one piece of this. Now we want to use Conform to help us
+build out the form in the UI. We'll use the `@conform-to/react` package for some
+utilities and also a utility from `@conform-to/zod` to convert our Zod schema into
+HTML validation attributes so we can delete those! Once we've done that, we no
+longer need to duplicate that validation logic in the UI! It's truly consistent
+between the UI and the server!
 
-Here's the relevant part of the example from the background info we saw earlier:
+Here's the relevant bits from the example we had in our background info for this
+exercise:
 
-```tsx lines=1,15-17,19-25,27-32,34,38-46
+```tsx lines=1-2,18-25,28,30-32,35-40,42
+import { conform, useForm } from '@conform-to/react'
 import { getFieldsetConstraint, parse } from '@conform-to/zod'
 import { Form } from '@remix-run/react'
 import { json, redirect } from '@remix-run/node'
@@ -23,53 +26,83 @@ const LoginSchema = z.object({
 	password: z.string({ required_error: 'Password is required' }),
 })
 
-export async function action({ request }: DataFunctionArgs) {
-	const formData = await request.formData()
-	const submission = parse(formData, {
-		schema: LoginSchema,
+// ...
+
+export default function LoginForm() {
+	const actionData = useActionData<typeof action>()
+	const [form, fields] = useForm({
+		id: 'login-form',
+		constraint: getFieldsetConstraint(LoginSchema),
+		lastSubmission: actionData?.submission,
+		onValidate({ formData }) {
+			return parse(formData, { schema: LoginSchema })
+		},
 	})
 
-	if (submission.intent !== 'submit') {
-		// the user hasn't submitted the form yet
-		// this will happen if Conform is validating the form before submission
-		// (like if we configure Conform to validate onBlur)
-		// We'll not add this yet, we'll get to it later.
-		return json({ status: 'idle', submission } as const)
-	}
-
-	if (!submission.value) {
-		// there's no value because there is an error in the form
-		return json({ status: 'error', submission } as const, {
-			status: 400,
-		})
-	}
-
-	const { email, password } = submission.value
-
-	const isAuthenticated = await authenticate({ email, password })
-	if (!isAuthenticated) {
-		// set the form error:
-		submission.error[''] = ['Invalid email or password']
-		return json(
-			{
-				status: 'error',
-				submission,
-			} as const,
-			{ status: 401 },
-		)
-	}
-
-	return redirect('/dashboard')
+	return (
+		<Form method="post" {...form.props}>
+			<div>
+				<label htmlFor={fields.email.id}>Email</label>
+				<input {...conform.input(fields.email)} />
+				<ErrorList id={fields.email.errorId} errors={fields.email.errors} />
+			</div>
+			<div>
+				<label htmlFor={fields.password.id}>Password</label>
+				<input {...conform.input(fields.password, { type: 'password' })}>
+				<ErrorList
+					id={fields.password.errorId}
+					errors={fields.password.errors}
+				/>
+			</div>
+			<ErrorList id={form.errorId} errors={form.errors} />
+			<button type="submit">Login</button>
+		</Form>
+	)
 }
 ```
 
-Could you update our form to use this in the `action`? This will require a few
-changes in the UI as well because the errors are _slightly_ different and we'll
-be passing back a `submission` object instead of just the `errors`.
+Notice the lack of HTML validation, `name`, `id`, and `aria-` attributes! Oh,
+and the lack of `noValidate` on the form as well. All that stuff is handled for
+us by Conform and derived from our Zod schema. And it's all typesafe as well. If
+we change the schema, we'll get type errors in both our UI and our server code.
+And again, it's all progressively enhanced too.
 
-🦉 I'd like you to check out what the `submission` object looks like in the
-network tab or log it to the console. Why do you suppose all that information is
-necessary?
+The derived attributes are coming from the `getFieldsetConstraint` utility which
+reads our Zod schema and configures the `fields` to have the correct attributes.
+Then the `conform.input`, `conform.textarea`, etc. utilities read that config
+and apply the correct attributes.
 
-- [📜 `@conform-to/zod`](https://conform.guide/api/zod)
-- [📜 Conform Validation](https://conform.guide/validation)
+The `lastSubmission` option is used to set the errors as well as the values of
+the fields.
+
+And the `onValidate` bit will run our validation on the client. This is awesome
+because now the user doesn't need to bother submitting the form before they get
+feedback on their input! This has interesting implications for validation that
+requires database access. We'll get to that in a bit.
+
+Conform truly is great 🏅
+
+But we've still gotta implement it first! So let's get to it. Get ready to
+remove a lot of code!
+
+Oh, one thing that's not in our example that we'll be using is the
+`defaultValue` option. Since we're editing a note, we want the initial values
+to be set to the current value in the note. For example:
+
+```tsx lines=8-11
+const [form, fields] = useForm({
+	id: 'login-form',
+	constraint: getFieldsetConstraint(LoginSchema),
+	lastSubmission: actionData?.submission,
+	onValidate({ formData }) {
+		return parse(formData, { schema: LoginSchema })
+	},
+	defaultValue: {
+		email: user.email,
+		password: 'lol',
+	},
+})
+```
+
+- [📜 Conform Remix Integration](https://conform.guide/integration/remix)
+- [📜 Conform Accessibility](https://conform.guide/accessibility)
