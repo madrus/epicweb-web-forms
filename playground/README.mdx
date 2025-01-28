@@ -1,120 +1,95 @@
-# Conform form utils
+# Multi-part form data
 
-## My thoughts
+<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/file-upload/file-upload-functionality" />
 
-Using Conform to validate your forms is a great way to ensure that your forms
-are properly validated, both client and server side. Conform considerably
-simplifies our life as it drastically reduces the amount of boilerplate code
-we need to write.
+🧝‍♂️ I've made some adjustments you may want to know about. We now have a new
+resource route that's responsible for serving
+images: <InlineFile file="app/routes/resources+/images.$imageId.tsx" />.
 
-Nevertheless, it was nice to first learn what is happening under the hood
-of form validation in order to enjoy the simplicity of Conform optimizations.
+So now any image can be displayed by its ID via: `/resources/images/:imageId`.
+So I updated <InlineFile file="app/routes/users+/$username_+/notes.$noteId.tsx" />
+to use this new route to display the images for notes. So that's all ready for
+us to start storing images for notes.
 
-## Instructions
+Another thing I did to help prepare for your work is I put together a fancy
+`ImageChooser` component you can use for the user to have a nicer UX for
+selecting an image than the default file input. It's a bit more involved than
+you have time for, but feel free to explore how that's implemented if you've got
+time. You will be making some changes to it during the workshop.
 
-<EpicVideo url="https://www.epicweb.dev/workshops/professional-web-forms/schema-validation/type-safety-with-conform" />
+You'll find it at the bottom
+of <InlineFile file="app/routes/users+/$username_+/notes.$noteId_.edit.tsx" line="182" />.
+I also updated the loader to load the note's images if it already has images:
 
-👨‍💼 The backend is only one piece of this. Now we want to use Conform to help us
-build out the form in the UI. We'll use the `@conform-to/react` package for some
-utilities and also a utility from `@conform-to/zod` to convert our Zod schema into
-HTML validation attributes so we can delete those! Once we've done that, we no
-longer need to duplicate that validation logic in the UI! It's truly consistent
-between the UI and the server!
-
-Here's the relevant bits from the example we had in our background info for this
-exercise:
-
-```tsx lines=1-2,18-25,28,30-32,35-40,42
-import { conform, useForm } from '@conform-to/react'
-import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import { Form } from '@remix-run/react'
-import { json, redirect } from '@remix-run/node'
-import { z } from 'zod'
-
-const LoginSchema = z.object({
-	email: z
-		.string({ required_error: 'Email is required' })
-		.email('Email is invalid'),
-	password: z.string({ required_error: 'Password is required' }),
-})
-
-// ...
-
-export default function LoginForm() {
-	const actionData = useActionData<typeof action>()
-	const [form, fields] = useForm({
-		id: 'login-form',
-		constraint: getFieldsetConstraint(LoginSchema),
-		lastSubmission: actionData?.submission,
-		onValidate({ formData }) {
-			return parse(formData, { schema: LoginSchema })
+```tsx start=22 lines=37
+export async function loader({ params }: LoaderFunctionArgs) {
+	const note = db.note.findFirst({
+		where: {
+			id: {
+				equals: params.noteId,
+			},
 		},
 	})
-
-	return (
-		<Form method="post" {...form.props}>
-			<div>
-				<label htmlFor={fields.email.id}>Email</label>
-				<input {...conform.input(fields.email)} />
-				<ErrorList id={fields.email.errorId} errors={fields.email.errors} />
-			</div>
-			<div>
-				<label htmlFor={fields.password.id}>Password</label>
-				<input {...conform.input(fields.password, { type: 'password' })}>
-				<ErrorList
-					id={fields.password.errorId}
-					errors={fields.password.errors}
-				/>
-			</div>
-			<ErrorList id={form.errorId} errors={form.errors} />
-			<button type="submit">Login</button>
-		</Form>
-	)
+	if (!note) {
+		throw new Response('Note not found', { status: 404 })
+	}
+	return json({
+		note: {
+			title: note.title,
+			content: note.content,
+			images: note.images.map(i => ({ id: i.id, altText: i.altText })),
+		},
+	})
 }
 ```
 
-Notice the lack of HTML validation, `name`, `id`, and `aria-` attributes! Oh,
-and the lack of `noValidate` on the form as well. All that stuff is handled for
-us by Conform and derived from our Zod schema. And it's all typesafe as well. If
-we change the schema, we'll get type errors in both our UI and our server code.
-And again, it's all progressively enhanced too.
+So you can use that to preload the images for the note if it already has images
+when the user goes to edit the note.
 
-The derived attributes are coming from the `getFieldsetConstraint` utility which
-reads our Zod schema and configures the `fields` to have the correct attributes.
-Then the `conform.input`, `conform.textarea`, etc. utilities read that config
-and apply the correct attributes.
+As a reminder, you can check the Diff tab and select the previous solution step
+vs this problem step to see all the changes I made.
 
-The `lastSubmission` option is used to set the errors as well as the values of
-the fields.
+Alright, with that background, I think you're ready to make your adjustments!
+Good luck!
 
-And the `onValidate` bit will run our validation on the client. This is awesome
-because now the user doesn't need to bother submitting the form before they get
-feedback on their input! This has interesting implications for validation that
-requires database access. We'll get to that in a bit.
+👨‍💼 Thanks Kellie! Alright, we need you to make adjustments so we can start
+uploading images to the notes page. We'll be making the minimal changes for this
+and we'll progressively improve it in the next steps. That means we'll be
+ignoring some of the TypeScript stuff (sorry Lily! 🦺😢).
 
-Conform truly is great 🏅
+At a high-level, here's what you'll be adjusting:
 
-But we've still gotta implement it first! So let's get to it. Get ready to
-remove a lot of code!
+- Update the `encType` of the form so we can accept file uploads
+- Update the `type` on our file upload input so it's a file input
+- Properly parse the request in our action so it can handle the file upload
+  using Remix's memory upload handler
+- Render a hidden input for the existing image ID if it does exist so it's
+  preserved if the user's just wanting to update the alt text.
 
-Oh, one thing that's not in our example that we'll be using is the
-`defaultValue` option. Since we're editing a note, we want the initial values
-to be set to the current value in the note. For example:
+Here's that example again of how to process the file in your action:
 
-```tsx lines=8-11
-const [form, fields] = useForm({
-	id: 'login-form',
-	constraint: getFieldsetConstraint(LoginSchema),
-	lastSubmission: actionData?.submission,
-	onValidate({ formData }) {
-		return parse(formData, { schema: LoginSchema })
-	},
-	defaultValue: {
-		email: user.email,
-		password: 'lol',
-	},
-})
+```tsx
+import {
+	unstable_createMemoryUploadHandler as createMemoryUploadHandler,
+	unstable_parseMultipartFormData as parseMultipartFormData,
+} from '@remix-run/node'
+export const action = async ({ request }: ActionArgs) => {
+	const uploadHandler = createMemoryUploadHandler({
+		maxPartSize: 1024 * 1024 * 5, // 5 MB
+	})
+	const formData = await parseMultipartFormData(request, uploadHandler)
+
+	const file = formData.get('avatar')
+
+	// file is a "File" (https://mdn.io/File) polyfilled for node
+	// ... etc
+}
 ```
 
-- [📜 Conform Remix Integration](https://conform.guide/integration/remix)
-- [📜 Conform Accessibility](https://conform.guide/accessibility)
+The emoji team (🐨💰🦺💣) will be in there to help guide you through this one.
+Enjoy!
+
+- [📜 `input[type=file]`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file)
+- [📜 `File`](https://developer.mozilla.org/en-US/docs/Web/API/File)
+- [📜 **`unstable_parseMultipartFormData`**](https://remix.run/docs/en/main/utils/parse-multipart-form-data)
+- [📜 **`unstable_createMemoryUploadHandler`**](https://remix.run/docs/en/main/utils/unstable-create-memory-upload-handler)

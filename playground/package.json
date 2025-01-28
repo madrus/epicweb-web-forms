@@ -1,5 +1,5 @@
 {
-  "name": "exercises__sep__03.schema-validation__sep__03.problem.conform-form",
+  "name": "exercises__sep__04.file-upload__sep__01.problem.multi-part",
   "private": true,
   "sideEffects": false,
   "type": "module",
